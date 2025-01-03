@@ -21,6 +21,7 @@ fun AchievementsScreen(
         topBar = {
             TopBar(
                 title = "Achievements",
+                showBackButton = true,
                 onBackPressed = onBackPressed
             )
         }

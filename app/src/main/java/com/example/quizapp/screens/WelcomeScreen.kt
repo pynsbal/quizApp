@@ -9,16 +9,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quizapp.sound.LocalSoundEffects
-import com.example.quizapp.sound.SoundType
 
 @Composable
 fun WelcomeScreen(
     onStartClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onAchievementsClick: () -> Unit
 ) {
-    val soundEffects = LocalSoundEffects.current
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -44,10 +41,7 @@ fun WelcomeScreen(
         )
 
         Button(
-            onClick = { 
-                soundEffects.playSound(SoundType.CLICK)
-                onStartClick()
-            },
+            onClick = onStartClick,
             modifier = Modifier
                 .fillMaxWidth(0.7f)
                 .height(56.dp)
@@ -60,10 +54,7 @@ fun WelcomeScreen(
         }
 
         Button(
-            onClick = { 
-                soundEffects.playSound(SoundType.CLICK)
-                onSettingsClick()
-            },
+            onClick = onSettingsClick,
             modifier = Modifier
                 .fillMaxWidth(0.7f)
                 .height(56.dp)
@@ -73,6 +64,19 @@ fun WelcomeScreen(
             )
         ) {
             Text("Settings", style = MaterialTheme.typography.titleLarge)
+        }
+
+        Button(
+            onClick = onAchievementsClick,
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(56.dp)
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiary
+            )
+        ) {
+            Text("Achievements", style = MaterialTheme.typography.titleLarge)
         }
     }
 } 

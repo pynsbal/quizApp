@@ -5,8 +5,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.style.TextAlign
-import com.example.quizapp.sound.LocalSoundEffects
-import com.example.quizapp.sound.SoundType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -15,8 +13,6 @@ fun TopBar(
     onBackPressed: () -> Unit,
     showBackButton: Boolean = true
 ) {
-    val soundEffects = LocalSoundEffects.current
-
     TopAppBar(
         title = {
             Text(
@@ -28,10 +24,7 @@ fun TopBar(
         navigationIcon = {
             if (showBackButton) {
                 IconButton(
-                    onClick = {
-                        soundEffects.playSound(SoundType.CLICK)
-                        onBackPressed()
-                    }
+                    onClick = onBackPressed
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,

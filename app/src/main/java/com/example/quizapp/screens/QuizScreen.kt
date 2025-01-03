@@ -8,8 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.quizapp.data.*
-import com.example.quizapp.sound.LocalSoundEffects
-import com.example.quizapp.sound.SoundType
 import com.example.quizapp.components.TopBar
 
 @Composable
@@ -21,25 +19,35 @@ fun QuizScreen(
     onError: (String) -> Unit,
     onBackPressed: () -> Unit
 ) {
-    val soundEffects = LocalSoundEffects.current
     var currentQuestionIndex by remember { mutableStateOf(0) }
     var correctAnswers by remember { mutableStateOf(0) }
     
     val questions = remember(category, level) {
-        QuizData.questions.filter { 
-            it.category == category && 
-            it.level == level &&
-            it.difficulty == difficulty
+        try {
+            println("DEBUG: Loading questions for ${category.name} level $level")
+            QuizData.getQuestionsForCategoryAndLevel(category, level)
+        } catch (e: Exception) {
+            println("DEBUG: Error loading questions - ${e.message}")
+            e.printStackTrace() // This will print the full error stack trace
+            onError("Error loading questions: ${e.message}")
+            null
         }
     }
 
+    if (questions == null) {
+        println("DEBUG: Questions is null, returning")
+        return
+    }
+
     if (questions.isEmpty()) {
+        println("DEBUG: Questions is empty, showing error")
         LaunchedEffect(Unit) {
-            onError("No questions available for this level")
+            onError("No questions available for ${category.name} level $level")
         }
         return
     }
 
+    println("DEBUG: Loaded ${questions.size} questions successfully")
     val currentQuestion = questions[currentQuestionIndex]
 
     Scaffold(
@@ -87,9 +95,6 @@ fun QuizScreen(
                     onClick = {
                         if (index == currentQuestion.correctAnswer) {
                             correctAnswers++
-                            soundEffects.playSound(SoundType.CORRECT)
-                        } else {
-                            soundEffects.playSound(SoundType.WRONG)
                         }
 
                         if (currentQuestionIndex < questions.size - 1) {
@@ -97,10 +102,9 @@ fun QuizScreen(
                         } else {
                             // Quiz completed
                             UserProgress.completeLevel(
-                                category,
-                                level,
-                                questions.size,
-                                correctAnswers
+                                category = category,
+                                level = level,
+                                score = (correctAnswers * 100) / questions.size
                             )
                             onQuizFinished()
                         }

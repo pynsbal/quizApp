@@ -12,14 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.quizapp.data.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
 import com.example.quizapp.components.TopBar
-import com.example.quizapp.sound.LocalSoundEffects
-import com.example.quizapp.sound.SoundType
 
 @Composable
 fun LevelMapScreen(
@@ -27,8 +26,8 @@ fun LevelMapScreen(
     onLevelSelected: (Int) -> Unit,
     onBackPressed: () -> Unit
 ) {
-    val soundEffects = LocalSoundEffects.current
-    val levels = (1..15).toList() // Show 15 levels
+    val context = LocalContext.current
+    val levels = (1..15).toList()
 
     Scaffold(
         topBar = {
@@ -49,63 +48,36 @@ fun LevelMapScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(levels) { level ->
-                LevelButton(
-                    level = level,
-                    category = category,
-                    onClick = {
-                        soundEffects.playSound(SoundType.CLICK)
-                        onLevelSelected(level)
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LevelButton(
-    level: Int,
-    category: Category,
-    onClick: () -> Unit
-) {
-    val progress = UserProgress.getInstance()
-    val score = progress.getScore(category, level)
-    val isUnlocked = progress.isLevelUnlocked(category, level)
-    
-    Button(
-        onClick = { if (isUnlocked) onClick() },
-        modifier = Modifier
-            .size(80.dp)
-            .clip(CircleShape),
-        enabled = isUnlocked,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = when {
-                !isUnlocked -> MaterialTheme.colorScheme.surfaceVariant
-                score > 0 -> MaterialTheme.colorScheme.primaryContainer
-                else -> MaterialTheme.colorScheme.primary
-            }
-        )
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            if (!isUnlocked) {
-                Icon(Icons.Default.Lock, contentDescription = "Locked level")
-            } else {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                val isUnlocked = UserProgress.isLevelUnlocked(category, level)
+                val score = UserProgress.getScore(category, level)
+                
+                Button(
+                    onClick = { if (isUnlocked) onLevelSelected(level) },
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isUnlocked) 
+                            MaterialTheme.colorScheme.primary
+                        else 
+                            MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
-                    Text(level.toString())
-                    if (score > 0) {
-                        Row {
-                            repeat(score) {
-                                Icon(
-                                    Icons.Default.Star,
-                                    contentDescription = "Star",
-                                    modifier = Modifier.size(16.dp)
-                                )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(level.toString())
+                        if (!isUnlocked) {
+                            Icon(Icons.Default.Lock, "Locked")
+                        } else if (score > 0) {
+                            Row {
+                                repeat(score / 33 + 1) {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        "Star",
+                                        tint = Color.Yellow
+                                    )
+                                }
                             }
                         }
                     }

@@ -3,33 +3,22 @@ package com.example.quizapp.data
 import com.example.quizapp.data.questionbanks.*
 
 object QuizData {
-    fun getCategories(): List<DisplayCategory> = 
-        Category.entries.map { it.toDisplayCategory() }
-
-    private val allQuestions: List<Question> = listOf(
+    val questions: List<Question> = listOf(
         MathQuestions.questions,
         ComputerQuestions.questions,
         ScienceQuestions.questions,
         EnglishQuestions.questions
     ).flatten()
 
-    fun getQuestionsForLevel(category: Category, level: Int, count: Int = 5): List<Question> {
-        val difficulty = getDifficultyForLevel(level)
-        val levelQuestions = allQuestions.filter { q -> 
+    fun getCategories(): List<DisplayCategory> = 
+        Category.entries.map { it.toDisplayCategory() }
+
+    fun getQuestionsForLevel(category: Category, level: Int, difficulty: Difficulty): List<Question> {
+        return questions.filter { q -> 
             q.category == category && 
             q.level == level &&
             q.difficulty == difficulty
         }
-
-        if (levelQuestions.isEmpty()) {
-            throw IllegalStateException("No questions available for level $level in category $category")
-        }
-
-        if (levelQuestions.size < count) {
-            throw IllegalStateException("Not enough questions for level $level in category $category. Required: $count, Found: ${levelQuestions.size}")
-        }
-
-        return levelQuestions.shuffled().take(count)
     }
 
     fun getDifficultyForLevel(level: Int): Difficulty {
@@ -40,24 +29,76 @@ object QuizData {
         }
     }
 
-    fun verifyQuestionCounts() {
-        val questionsByCategory = allQuestions.groupBy { it.category }
+    fun validateQuestions(): Map<Category, List<Int>> {
+        val missingQuestions = mutableMapOf<Category, MutableList<Int>>()
         
-        questionsByCategory.forEach { (category, questions) ->
-            println("\n=== $category Questions ===")
-            val questionsByLevel = questions.groupBy { it.level }
+        // Check each category
+        Category.entries.forEach { category ->
+            val missingLevels = mutableListOf<Int>()
             
-            for (level in 1..15) {
-                val count = questionsByLevel[level]?.size ?: 0
-                val status = when {
-                    count == 0 -> "❌ MISSING"
-                    count < 5 -> "⚠️ INSUFFICIENT ($count)"
-                    count == 5 -> "✅ OK"
-                    count > 5 -> "⚠️ TOO MANY ($count)"
-                    else -> "⚠️ UNKNOWN"
+            // Check levels 1-15 for each category
+            (1..15).forEach { level ->
+                val difficulty = getDifficultyForLevel(level)
+                val hasQuestions = questions.any { question ->
+                    question.category == category &&
+                    question.level == level &&
+                    question.difficulty == difficulty
                 }
-                println("Level $level: $status")
+                
+                if (!hasQuestions) {
+                    missingLevels.add(level)
+                }
+            }
+            
+            if (missingLevels.isNotEmpty()) {
+                missingQuestions[category] = missingLevels
             }
         }
+        
+        return missingQuestions
+    }
+
+    fun printQuestionValidation() {
+        val missingQuestions = validateQuestions()
+        
+        if (missingQuestions.isEmpty()) {
+            println("✅ All categories have questions for all levels")
+            return
+        }
+
+        println("❌ Missing questions found:")
+        missingQuestions.forEach { (category, levels) ->
+            println("${category.name}:")
+            println("  Missing levels: ${levels.joinToString(", ")}")
+            levels.forEach { level ->
+                println("  - Level $level (${getDifficultyForLevel(level)})")
+            }
+        }
+    }
+
+    fun getQuestionsForCategoryAndLevel(category: Category, level: Int): List<Question> {
+        val difficulty = getDifficultyForLevel(level)
+        println("DEBUG: Searching for questions - Category: ${category.name}, Level: $level, Difficulty: $difficulty")
+        println("DEBUG: Total questions in database: ${questions.size}")
+        
+        val filteredQuestions = questions.filter { 
+            it.category == category && 
+            it.level == level &&
+            it.difficulty == difficulty
+        }
+        
+        println("DEBUG: Found ${filteredQuestions.size} questions for this level")
+        
+        if (filteredQuestions.isEmpty()) {
+            println("DEBUG: No questions found!")
+            throw IllegalStateException("No questions found for ${category.name} level $level")
+        }
+        
+        if (filteredQuestions.size < 5) {
+            println("DEBUG: Not enough questions! Only found ${filteredQuestions.size}")
+            throw IllegalStateException("Not enough questions for ${category.name} level $level (found ${filteredQuestions.size}, need 5)")
+        }
+        
+        return filteredQuestions
     }
 } 
